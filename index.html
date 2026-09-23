@@ -331,7 +331,7 @@
             </div>
 
             <div style="margin-top:15px;">
-                <label style="background:#f0f2f5; padding:12px; display:block; text-align:center; cursor:pointer; border-radius:8px; font-weight:700; color:#0084ff;">
+                <label onclick="document.getElementById('filePicker').click()" style="background:#f0f2f5; padding:12px; display:block; text-align:center; cursor:pointer; border-radius:8px; font-weight:700; color:#0084ff;">
                     <i class="fa-solid fa-images"></i> اختر صور أو فيديوهات من ملفات الهاتف (يتم ضغط الفيديو تلقائياً)
                     <input type="file" id="filePicker" accept="image/*,video/*" multiple style="display:none;" onchange="handleFileSelect(event)">
                 </label>
@@ -391,7 +391,6 @@
         window.activeStory = { mediaUrl: "", mediaType: "", time: Date.now(), viewers: [] };
         window.posts = [];
 
-        // مزامنة البيانات سحابياً بشكل لحظي ومستمر عبر Firestore
         function initCloudSync() {
             const settingsDocRef = doc(db, "siteSettings", "mainConfig");
             
@@ -671,7 +670,6 @@
             }
         }
 
-        // تم تعديل هذه الدالة لتشمل خيارات تغيير الصورة وتعديل التعليق للأدمن عند النقر على أي صورة شخصية
         window.handleAccountClick = function(accountId, docId = null, commentIndex = null, replyIndex = null) {
             let acc = window.accounts.find(a => a.id === accountId);
             if (!acc) {
@@ -693,7 +691,6 @@
                     let newName = prompt("أدخل الاسم الجديد:", acc.name);
                     if (newName !== null && newName.trim() !== "") {
                         acc.name = newName.trim();
-                        // إذا كان الحساب موجوداً ضمن مصفوفة الحسابات نقوم بتحديثه، وإلا نضيفه
                         let existingAcc = window.accounts.find(a => a.id === acc.id);
                         if (existingAcc) {
                             existingAcc.name = acc.name;
@@ -746,7 +743,6 @@
                         acc.avatar = compressedUrl;
                         if (acc.isMain) updateAvatarDisplay('avatarImg', 'avatarPlaceholderIcon', compressedUrl);
                     } else {
-                        // إذا كانت الصورة تابعة لمعلق غير موجود بقائمة الحسابات الأساسية، ننشئ له سجلاً
                         window.accounts.push({ id: window.targetAccountIdForAvatar, name: "مستخدم", avatar: compressedUrl, isMain: false, isVerified: false });
                     }
                     await saveSettingsToCloud();
@@ -1019,8 +1015,8 @@
         }
 
         window.manageAccounts = function() {
-            let listStr = window.accounts.map((acc, index) => `${index + 1}. ${acc.name} ${acc.isVerified ? '✓(موثق)' : ''}`).join('\n');
-            let choice = prompt(`إدارة الحسابات والتوثيق:\n${listStr}\n\nاختر رقماً للإجراء:\n1. إضافة حساب جديد\n2. تغيير اسم الحساب\n3. تغيير صورة حساب\n4. تبديل حالة التوثيق`);
+            let listStr = window.accounts.map((acc, index) => `${index + 1}. ${acc.name} ${acc.isVerified ? '✓(موثق)' : ''} ${acc.isMain ? '(الحساب الرئيسي)' : ''}`).join('\n');
+            let choice = prompt(`إدارة الحسابات والتوثيق:\n${listStr}\n\nاختر رقماً للإجراء:\n1. إضافة حساب جديد\n2. تغيير اسم الحساب\n3. تغيير صورة حساب\n4. تبديل حالة التوثيق\n5. مسح/حذف حساب وهمي`);
             if (choice === "1") {
                 let name = prompt("أدخل اسم الحساب الجديد:");
                 if (name && name.trim()) {
@@ -1059,6 +1055,21 @@
                     saveSettingsToCloud();
                     renderFeed();
                     alert("تم تغيير حالة التوثيق بنجاح.");
+                }
+            } else if (choice === "5") {
+                let accNum = prompt(`اختر رقم الحساب الوهمي الذي تريد حذفه:\n` + window.accounts.map((acc, i) => `${i + 1}: ${acc.name} ${acc.isMain ? '(لا يمكن حذف الرئيسي)' : ''}`).join('\n'));
+                let idx = parseInt(accNum) - 1;
+                if (!isNaN(idx) && window.accounts[idx]) {
+                    if (window.accounts[idx].isMain) {
+                        alert("عذراً، لا يمكنك حذف الحساب الرئيسي للموقع!");
+                        return;
+                    }
+                    if (confirm(`هل أنت متأكد من مسح الحساب "${window.accounts[idx].name}" نهائياً؟`)) {
+                        window.accounts.splice(idx, 1);
+                        saveSettingsToCloud();
+                        renderFeed();
+                        alert("تم مسح الحساب الوهمي بنجاح.");
+                    }
                 }
             }
         }
