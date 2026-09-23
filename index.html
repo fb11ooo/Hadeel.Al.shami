@@ -83,7 +83,7 @@
         .modal-body { padding: 12px 16px; overflow-y: auto; flex: 1; background: #fff; }
         .modal-footer { padding: 10px 16px; border-top: 1px solid #ddd; background: #fff; display: flex; flex-direction: column; gap: 8px; font-weight: 600; }
         
-        .comment-item { display: flex; gap: 10px; margin-bottom: 15px; align-items: flex-start; }
+        .comment-item { display: flex; gap: 10px; margin-bottom: 12px; align-items: flex-start; }
         .comment-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; flex-shrink: 0; cursor: pointer; background: #e4e6eb; }
         .comment-bubble-container { max-width: 85%; }
         .comment-bubble { background: #f0f2f5; padding: 10px 14px; border-radius: 18px; font-size: 14px; color: #050505; line-height: 1.4; word-break: break-word; position: relative; font-weight: 500; }
@@ -92,6 +92,15 @@
         .comment-meta { font-size: 11px; color: #65676b; margin-top: 3px; padding-right: 10px; display: flex; gap: 10px; align-items: center; font-weight: 600; }
         .comment-meta span { font-weight: 700; }
         .comment-attachment { max-width: 180px; max-height: 180px; width: auto; height: auto; border-radius: 8px; margin-top: 8px; object-fit: contain; cursor: pointer; display: block; background: #fff; }
+
+        /* تنسيقات الردود */
+        .replies-section { margin-right: 46px; margin-top: 6px; }
+        .reply-item { display: flex; gap: 8px; margin-top: 8px; align-items: flex-start; }
+        .reply-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; flex-shrink: 0; cursor: pointer; background: #e4e6eb; }
+        .reply-bubble { background: #f0f2f5; padding: 8px 12px; border-radius: 14px; font-size: 13px; color: #050505; line-height: 1.4; word-break: break-word; font-weight: 500; max-width: 100%; }
+        .toggle-replies-btn { font-size: 12px; color: #65676b; font-weight: 700; cursor: pointer; margin-top: 4px; margin-right: 46px; display: inline-block; }
+        .toggle-replies-btn:hover { text-decoration: underline; color: #0084ff; }
+        .reply-input-container { display: none; margin-right: 46px; margin-top: 8px; gap: 6px; align-items: center; }
 
         .image-viewer-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; justify-content: center; align-items: center; }
         .image-viewer-content { max-width: 95%; max-height: 95%; object-fit: contain; border-radius: 4px; }
@@ -184,7 +193,7 @@
         </div>
     </div>
 
-    <!-- باقي النوافذ والـ Modals -->
+    <!-- نافذة عرض الفيديو -->
     <div id="videoViewerModal" class="video-viewer-overlay">
         <div style="display:flex; justify-content:space-between; align-items:center; padding:15px; background:rgba(0,0,0,0.8); color:#fff; z-index:10;">
             <div style="display:flex; align-items:center; gap:12px;">
@@ -218,7 +227,7 @@
                 <span id="videoViewerReactions" style="display:inline-flex; align-items:center; gap:6px;">
                     <span style="display:inline-flex; align-items:center;"><span class="reaction-icon like"><i class="fa-solid fa-thumbs-up"></i></span><span class="reaction-icon love" style="margin-right:-6px;"><i class="fa-solid fa-heart"></i></span></span> <span id="videoViewerReactionsCount">8</span>
                 </span>
-                <span id="videoViewerStats" style="cursor:pointer;" onclick="openVideoViewersList()" title="عرض قائمة الأجهزة المشاهدة">٨ تعليقات · 0 مشاهدة</span>
+                <span id="videoViewerStats" style="cursor:pointer;" onclick="openVideoViewersList()" title="عرض قائمة المشاهدات">٨ تعليقات · 0 مشاهدة</span>
             </div>
             <div style="display:flex; justify-content:space-around; border-top:1px solid #3a3b3c; padding-top:8px;">
                 <div style="flex:1; text-align:center; color:#b0b3b8; font-weight:700; font-size:14px; display:flex; align-items:center; justify-content:center; gap:6px;"><i class="fa-regular fa-thumbs-up"></i> أعجبني</div>
@@ -228,6 +237,7 @@
         </div>
     </div>
 
+    <!-- نافذة عرض القصة -->
     <div id="storyViewerModal" class="story-viewer-overlay" onclick="closeStory()">
         <div class="story-container" onclick="event.stopPropagation()">
             <div class="story-header">
@@ -244,21 +254,23 @@
             </div>
             <div id="storyAdminFooter" class="story-footer-admin" style="display: none;" onclick="openStoryViewers()">
                 <span>👁️ عدد المشاهدات: <b id="storyViewCount">0</b></span>
-                <span style="font-size: 12px; background: #0084ff; padding: 4px 8px; border-radius: 4px;">عرض الأجهزة المشاهدة</span>
+                <span style="font-size: 12px; background: #0084ff; padding: 4px 8px; border-radius: 4px;">عرض المشاهدات</span>
             </div>
         </div>
     </div>
 
+    <!-- نافذة عرض سجل المشاهدين -->
     <div id="viewersModal" class="viewers-modal-overlay" onclick="if(event.target === this) closeViewersModal()">
         <div class="viewers-modal-content">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 15px;">
-                <span id="viewersModalTitle" style="font-size: 16px; font-weight: 700;">سجل المشاهدات (حسب الأجهزة)</span>
+                <span id="viewersModalTitle" style="font-size: 16px; font-weight: 700;">سجل المشاهدات</span>
                 <span style="cursor: pointer; font-size: 18px;" onclick="closeViewersModal()">✕</span>
             </div>
             <div id="viewersListContainer"></div>
         </div>
     </div>
 
+    <!-- نافذة التعليقات -->
     <div id="commentsModal" class="modal-overlay" onclick="if(event.target === this) closeCommentsModal()">
         <div class="modal-content">
             <div class="modal-header">
@@ -273,11 +285,13 @@
         </div>
     </div>
 
+    <!-- نافذة عرض الصور بكامل الشاشة -->
     <div id="imageViewerModal" class="image-viewer-overlay" onclick="closeImageViewer()">
         <span style="position:absolute; top:20px; right:20px; color:#fff; font-size:28px; cursor:pointer;" onclick="closeImageViewer()">✕</span>
         <img id="fullImageView" class="image-viewer-content">
     </div>
 
+    <!-- نافذة إنشاء / تعديل منشور -->
     <div id="createPostScreen" class="create-post-fullscreen">
         <div style="padding:15px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ddd;">
             <span onclick="closePostModal()" style="cursor:pointer; font-weight:700;">✕ إغلاق</span>
@@ -327,6 +341,7 @@
         </div>
     </div>
 
+    <!-- أزرار التحكم الخاصة بالأدمن -->
     <div id="adminControls" class="admin-controls-container">
         <div class="admin-btn" onclick="openPostModal()" title="إنشاء منشور جديد"><i class="fa-solid fa-plus"></i></div>
         <div class="admin-btn" onclick="document.getElementById('storyFilePicker').click()" title="إضافة أو تغيير القصة" style="background: #ff4500;"><i class="fa-solid fa-circle-plus"></i></div>
@@ -357,12 +372,10 @@
         let isAdmin = false;
         let currentPostIdForComment = null;
         let currentEditingPostId = null;
-        let currentReplyCommentIndex = null;
         let currentVideoPostId = null;
         
         let lockClickCount = 0;
         let lockTimer = null;
-        let visibleRepliesMap = {};
 
         let currentDeviceId = localStorage.getItem('viewer_device_id');
         if (!currentDeviceId) {
@@ -379,23 +392,21 @@
         window.activeStory = { mediaUrl: "", mediaType: "", time: Date.now(), viewers: [] };
         window.posts = [];
 
-        // مزامنة البيانات سحابياً من Firestore مباشرة
-        async function initCloudSync() {
-            // جلب الإعدادات العامة (الغلاف، البايو، الحسابات، القصة)
+        // مزامنة البيانات سحابياً بشكل لحظي ومستمر عبر Firestore
+        function initCloudSync() {
             const settingsDocRef = doc(db, "siteSettings", "mainConfig");
             
-            // استماع للتحديثات الحية للمنشورات
             onSnapshot(collection(db, "posts"), (snapshot) => {
                 window.posts = [];
                 snapshot.forEach((docSnap) => {
                     window.posts.push({ docId: docSnap.id, ...docSnap.data() });
                 });
-                // ترتيب المنشورات تنازلياً حسب الوقت
                 window.posts.sort((a, b) => b.id - a.id);
                 renderFeed();
+            }, (error) => {
+                console.error("Error fetching posts: ", error);
             });
 
-            // استماع للتحديثات الحية للإعدادات العامة
             onSnapshot(settingsDocRef, (docSnap) => {
                 if (docSnap.exists()) {
                     let data = docSnap.data();
@@ -417,7 +428,6 @@
                         updateStoryUI();
                     }
                 } else {
-                    // إنشاء المستند الافتراضي لأول مرة إذا لم يكن موجوداً
                     setDoc(settingsDocRef, {
                         coverImgUrl: window.coverImgUrl,
                         bioText: window.bioText,
@@ -442,7 +452,6 @@
             }
         }
 
-        // بدء الربط السحابي عند تحميل الصفحة
         initCloudSync();
 
         function getTimeAgo(timestamp) {
@@ -818,7 +827,7 @@
         }
 
         window.openStoryViewers = function() {
-            document.getElementById('viewersModalTitle').innerText = "سجل مشاهدات القصة (حسب الأجهزة)";
+            document.getElementById('viewersModalTitle').innerText = "سجل مشاهدات القصة";
             let container = document.getElementById('viewersListContainer');
             let viewers = window.activeStory.viewers || [];
             container.innerHTML = viewers.length === 0 ? `<p style="text-align: center; color: #777; padding: 20px;">لم يشاهد القصة أي جهاز بعد.</p>` : viewers.map(v => `
@@ -859,7 +868,7 @@
                 { id: 'imageViewerModal', cleanup: () => {} },
                 { id: 'viewersModal', cleanup: () => {} },
                 { id: 'storyViewerModal', cleanup: () => { let vid = document.getElementById('storyMediaVid'); if(vid) vid.pause(); } },
-                { id: 'commentsModal', cleanup: () => { currentReplyCommentIndex = null; } },
+                { id: 'commentsModal', cleanup: () => {} },
                 { id: 'videoViewerModal', cleanup: () => { 
                     let vid = document.getElementById('fullVideoViewerElement'); 
                     let embed = document.getElementById('fullVideoEmbedContainer');
@@ -1193,6 +1202,46 @@
                         : `<div class="comment-avatar" style="background:#e4e6eb; display:flex; align-items:center; justify-content:center; cursor:pointer;" onclick="handleAccountClick(${c.authorId || 1})"><i class="fa-solid fa-user" style="font-size:14px; color:#8a8d91;"></i></div>`;
 
                     let commentTimeFormatted = getTimeAgo(c.time);
+                    let replies = c.replies || [];
+                    let hasReplies = replies.length > 0;
+
+                    let repliesHtml = replies.map((r, rIndex) => {
+                        let rAccObj = window.accounts.find(a => a.id === r.authorId) || { isVerified: false, avatar: r.authorAvatar };
+                        let rAvatar = rAccObj.avatar || r.authorAvatar;
+                        let rAvatarHtml = rAvatar && rAvatar.trim() !== ""
+                            ? `<img src="${rAvatar}" class="reply-avatar" onclick="handleAccountClick(${r.authorId || 1})">`
+                            : `<div class="reply-avatar" style="background:#e4e6eb; display:flex; align-items:center; justify-content:center; cursor:pointer;" onclick="handleAccountClick(${r.authorId || 1})"><i class="fa-solid fa-user" style="font-size:11px; color:#8a8d91;"></i></div>`;
+                        
+                        return `
+                            <div class="reply-item">
+                                ${rAvatarHtml}
+                                <div style="flex: 1;">
+                                    <div class="reply-bubble">
+                                        <span class="comment-author-name" onclick="handleAccountClick(${r.authorId || 1})" style="font-size: 12px;">${r.authorName} ${window.getVerifiedBadgeHtml(rAccObj)}</span>
+                                        ${r.badge ? `<span class="comment-badge" style="font-size: 10px;">${r.badge}</span>` : ''}
+                                        <div style="margin-top:2px;">${linkify(r.text)}</div>
+                                    </div>
+                                    <div class="comment-meta" style="font-size: 10px; margin-top: 2px;">
+                                        <span>${getTimeAgo(r.time)}</span>
+                                        ${isAdmin ? `<span onclick="deleteReplyFromCloud('${post.docId}', ${index},${rIndex})" style="color:red; cursor:pointer; font-weight:700;">حذف</span>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
+                    let toggleBtnHtml = hasReplies ? `<span class="toggle-replies-btn" id="toggle_btn_${index}" onclick="toggleReplies(${index})">إظهار الردود (${replies.length})</span>` : '';
+                    let replyInputBox = isAdmin ? `
+                        <div class="reply-input-container" id="reply_box_${index}">
+                            <select id="reply_author_${index}" style="padding: 4px; border-radius: 4px; border: 1px solid #ccc; font-size: 11px; font-weight: 600; outline: none;">
+                                ${window.accounts.map(acc => `<option value="${acc.id}">${acc.name}${acc.isVerified ? '✓' : ''}</option>`).join('')}
+                            </select>
+                            <input type="text" id="reply_text_${index}" placeholder="اكتب ردّاً..." style="flex: 1; padding: 6px 10px; border: 1px solid #ddd; border-radius: 14px; outline: none; font-size: 12px; background: #f0f2f5;" onkeydown="if(event.key === 'Enter') submitReply('${post.docId}', ${index})">
+                            <span onclick="submitReply('${post.docId}', ${index})" style="color: #0084ff; cursor: pointer; font-size: 14px;"><i class="fa-solid fa-paper-plane"></i></span>
+                        </div>
+                    ` : '';
+                    let replyTriggerBtn = isAdmin ? `<span style="color:#65676b; cursor:pointer; font-weight:700;" onclick="document.getElementById('reply_box_${index}').style.display = document.getElementById('reply_box_${index}').style.display === 'flex' ? 'none' : 'flex'">رد</span>` : '';
+
                     return `
                         <div class="comment-item">
                             ${commentAvatarHtml}
@@ -1206,8 +1255,14 @@
                                 <div class="comment-meta">
                                     <span>${commentTimeFormatted}</span>
                                     <span style="color:inherit; font-weight:700;">${c.reaction || 'أعجبني'}</span>
+                                    ${replyTriggerBtn}
                                     ${isAdmin ? `<span onclick="deleteCommentFromCloud('${post.docId}',${index})" style="color:red; cursor:pointer; font-weight:700;">حذف</span>` : ''}
                                 </div>
+                                ${toggleBtnHtml}
+                                <div id="replies_container_${index}" style="display: none;" class="replies-section">
+                                    ${repliesHtml}
+                                </div>
+                                ${replyInputBox}
                             </div>
                         </div>
                     `;
@@ -1241,6 +1296,81 @@
             if (commentsModalEl.style.display !== 'flex') {
                 window.history.pushState({ modal: 'commentsModal' }, '');
                 commentsModalEl.style.display = 'flex';
+            }
+        }
+
+        window.toggleReplies = function(index) {
+            let container = document.getElementById(`replies_container_${index}`);
+            let btn = document.getElementById(`toggle_btn_${index}`);
+            if (container && btn) {
+                if (container.style.display === 'none') {
+                    container.style.display = 'block';
+                    btn.innerText = "إخفاء الردود";
+                } else {
+                    container.style.display = 'none';
+                    let count = container.children.length;
+                    btn.innerText = `إظهار الردود (${count})`;
+                }
+            }
+        }
+
+        window.submitReply = async function(docId, commentIndex) {
+            if (!isAdmin) return;
+            let textInput = document.getElementById(`reply_text_${commentIndex}`);
+            let authorSelect = document.getElementById(`reply_author_${commentIndex}`);
+            let text = textInput.value.trim();
+            if (!text) return;
+
+            let post = window.posts.find(p => p.docId === docId);
+            if (!post || !post.comments[commentIndex]) return;
+
+            let authorId = parseInt(authorSelect.value);
+            let acc = window.accounts.find(a => a.id === authorId) || window.accounts[0];
+
+            let newReply = {
+                authorId: acc.id,
+                authorName: acc.name,
+                authorAvatar: acc.avatar,
+                badge: "",
+                text: text,
+                time: Date.now()
+            };
+
+            if (!post.comments[commentIndex].replies) post.comments[commentIndex].replies = [];
+            post.comments[commentIndex].replies.push(newReply);
+
+            try {
+                await updateDoc(doc(db, "posts", docId), {
+                    comments: post.comments
+                });
+                textInput.value = "";
+                openComments(docId);
+                // إبقاء الردود ظاهرة تلقائياً بعد إضافة الرد
+                setTimeout(() => {
+                    let container = document.getElementById(`replies_container_${commentIndex}`);
+                    let btn = document.getElementById(`toggle_btn_${commentIndex}`);
+                    if (container) container.style.display = 'block';
+                    if (btn) btn.innerText = "إخفاء الردود";
+                }, 100);
+            } catch(e) {
+                alert("حدث خطأ أثناء حفظ الرد.");
+            }
+        }
+
+        window.deleteReplyFromCloud = async function(docId, commentIndex, replyIndex) {
+            if (confirm("هل أنت متأكد من حذف هذا الرد؟")) {
+                let post = window.posts.find(p => p.docId === docId);
+                if (post && post.comments[commentIndex] && post.comments[commentIndex].replies) {
+                    post.comments[commentIndex].replies.splice(replyIndex, 1);
+                    try {
+                        await updateDoc(doc(db, "posts", docId), {
+                            comments: post.comments
+                        });
+                        openComments(docId);
+                    } catch(e) {
+                        alert("حدث خطأ أثناء الحذف.");
+                    }
+                }
             }
         }
 
@@ -1283,7 +1413,8 @@
                 text: text,
                 time: Date.now(),
                 attachment: "",
-                attachmentType: ""
+                attachmentType: "",
+                replies: []
             };
 
             if (!post.comments) post.comments = [];
