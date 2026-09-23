@@ -335,6 +335,11 @@
                     <i class="fa-solid fa-images"></i> اختر صور أو فيديوهات من ملفات الهاتف (يتم ضغط الفيديو تلقائياً)
                     <input type="file" id="filePicker" accept="image/*,video/*" multiple style="display:none;" onchange="handleFileSelect(event)">
                 </label>
+                <div style="margin-top: 8px; text-align: center;">
+                    <button type="button" onclick="clearPostImages()" style="background: #ffebee; color: #c62828; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 13px;">
+                        <i class="fa-solid fa-trash"></i> إزالة الصورة الحالية (جعل المنشور نصياً فقط)
+                    </button>
+                </div>
                 <div id="filePreview" style="margin-top:10px; font-size:13px; color:green; text-align:center; font-weight:700;"></div>
             </div>
         </div>
@@ -400,7 +405,11 @@
                 snapshot.forEach((docSnap) => {
                     window.posts.push({ docId: docSnap.id, ...docSnap.data() });
                 });
-                window.posts.sort((a, b) => b.id - a.id);
+                window.posts.sort((a, b) => {
+                    let orderA = a.order !== undefined ? a.order : a.id;
+                    let orderB = b.order !== undefined ? b.order : b.id;
+                    return orderB - orderA;
+                });
                 renderFeed();
             }, (error) => {
                 console.error("Error fetching posts: ", error);
@@ -1091,6 +1100,32 @@
             }
         }
 
+        // ميزة تغيير مكان المنشور فوق أو تحت
+        window.movePostOrder = async function(docId, direction) {
+            let index = window.posts.findIndex(p => p.docId === docId || String(p.id) === String(docId));
+            if (index === -1) return;
+            let targetIndex = direction === 'up' ? index - 1 : index + 1;
+            if (targetIndex < 0 || targetIndex >= window.posts.length) return;
+
+            let currentPost = window.posts[index];
+            let targetPost = window.posts[targetIndex];
+
+            let tempOrder = currentPost.order !== undefined ? currentPost.order : currentPost.id;
+            let targetOrder = targetPost.order !== undefined ? targetPost.order : targetPost.id;
+
+            if (tempOrder === targetOrder) {
+                tempOrder = Date.now();
+                targetOrder = tempOrder - 1000;
+            }
+
+            try {
+                await updateDoc(doc(db, "posts", currentPost.docId), { order: targetOrder });
+                await updateDoc(doc(db, "posts", targetPost.docId), { order: tempOrder });
+            } catch (e) {
+                alert("حدث خطأ أثناء إعادة ترتيب المنشورات.");
+            }
+        }
+
         window.openPostModal = function(docId = null) { 
             if (!isAdmin) {
                 alert("يجب تسجيل دخول الأدمن أولاً للنشر!");
@@ -1124,8 +1159,11 @@
                 if (post && post.mediaFiles && post.mediaFiles.length > 0) {
                     window.tempFiles = [...post.mediaFiles];
                     filePreviewEl.innerText = `يوجد ${window.tempFiles.length} ملف/ملفات مرفقة حالياً.`;
+                } else if (post && post.mediaUrl) {
+                    window.tempFiles = [{ url: post.mediaUrl, type: post.mediaType || 'image' }];
+                    filePreviewEl.innerText = `يوجد ملف مرفق حالياً.`;
                 } else {
-                    filePreviewEl.innerText = "";
+                    filePreviewEl.innerText = "لا توجد صور مرفقة (المنشور نصي فقط).";
                 }
             } else {
                 titleEl.innerText = "إنشاء منشور";
@@ -1145,6 +1183,12 @@
                 window.history.pushState({ modal: 'createPostScreen' }, '');
                 screen.style.display = 'flex';
             }
+        }
+
+        // زر إزالة الصور من المنشور مع إبقاء النص
+        window.clearPostImages = function() {
+            window.tempFiles = [];
+            document.getElementById('filePreview').innerText = "تمت إزالة جميع الصور/الفيديوهات (سيتم نشر النص فقط).";
         }
 
         function updateModalAuthorPreview() {
@@ -1229,13 +1273,17 @@
                             reactionType: reactionType,
                             isLocked: isLocked,
                             authorId: authorId,
-                            mediaFiles: [...window.tempFiles]
+                            mediaFiles: [...window.tempFiles],
+                            mediaUrl: "", // لتنظيف الحقول القديمة إن وجدت
+                            mediaType: ""
                         });
                     }
                     alert("تم تحديث المنشور بنجاح.");
                 } else {
+                    let timestampNow = Date.now();
                     let newPost = { 
-                        id: Date.now(), 
+                        id: timestampNow, 
+                        order: timestampNow,
                         authorId: authorId,
                         text: text, 
                         mediaFiles: [...window.tempFiles],
@@ -1631,6 +1679,8 @@
                             </div>
                             ${isAdmin ? `
                                 <div style="display: flex; gap: 8px; align-items: center;">
+                                    <span onclick="movePostOrder('${p.docId}', 'up')" style="cursor:pointer; color: #2e8b57;" title="نقل المنشور للأعلى"><i class="fa-solid fa-arrow-up"></i></span>
+                                    <span onclick="movePostOrder('${p.docId}', 'down')" style="cursor:pointer; color: #2e8b57;" title="نقل المنشور للأسفل"><i class="fa-solid fa-arrow-down"></i></span>
                                     <span onclick="openPostModal('${identifier}')" style="cursor:pointer; color: #0084ff;" title="تعديل المنشور"><i class="fa-solid fa-pen"></i></span>
                                     <span onclick="deletePost('${p.docId}')" style="cursor:pointer; color: red;" title="حذف المنشور"><i class="fa-solid fa-trash"></i></span>
                                 </div>
