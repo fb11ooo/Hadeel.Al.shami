@@ -372,6 +372,7 @@
         let currentPostIdForComment = null;
         let currentEditingPostId = null;
         let currentVideoPostId = null;
+        window.tempCommentAttachment = { url: "", type: "" };
         
         let lockClickCount = 0;
         let lockTimer = null;
@@ -1181,6 +1182,25 @@
             e.target.value = "";
         }
 
+        window.handleCommentFileSelect = async function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                try {
+                    let base64Url = file.type.startsWith('video') ? await compressVideo(file) : await compressImage(file, 400, 400, 0.5);
+                    window.tempCommentAttachment = {
+                        url: base64Url,
+                        type: file.type.startsWith('video') ? 'video' : 'image'
+                    };
+                    let indicator = document.getElementById('commentAttachmentIndicator');
+                    if(indicator) indicator.style.color = 'green';
+                    alert("تم إرفاق الملف للتعليق بنجاح!");
+                } catch(err) {
+                    alert("حدث خطأ أثناء ضغط المرفق.");
+                }
+            }
+            e.target.value = "";
+        }
+
         window.publishPost = async function() {
             let text = document.getElementById('postText').value;
             let reactions = document.getElementById('postReactionsInput').value;
@@ -1243,6 +1263,7 @@
 
         window.openComments = function(postId) {
             currentPostIdForComment = String(postId);
+            window.tempCommentAttachment = { url: "", type: "" };
             let post = window.posts.find(p => String(p.id) === String(postId) || String(p.docId) === String(postId));
             let body = document.getElementById('modalBody');
             let footer = document.getElementById('modalFooter');
@@ -1339,9 +1360,14 @@
                 </div>
             ` : '';
 
+            let commentAttachBtn = isAdmin ? `
+                <span id="commentAttachmentIndicator" onclick="document.getElementById('commentFilePicker').click()" style="cursor: pointer; color: #65676b; font-size: 18px; padding: 4px;" title="إرفاق صورة أو فيديو للتعليق"><i class="fa-solid fa-camera"></i></span>
+            ` : '';
+
             footer.innerHTML = `
                 ${authorSelectHtml}
                 <div style="display: flex; gap: 8px; align-items: center;">
+                    ${commentAttachBtn}
                     ${inputFieldHtml}
                     ${isAdmin ? `
                         <button onclick="submitComment('${post.docId}')" style="background: #0084ff; color: #fff; border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer;"><i class="fa-solid fa-paper-plane" style="font-size: 14px;"></i></button>
@@ -1439,7 +1465,7 @@
             if (!isAdmin) return;
             let textInput = document.getElementById('commentTextInput');
             let text = textInput.value.trim();
-            if (!text) return;
+            if (!text && !window.tempCommentAttachment.url) return;
 
             let post = window.posts.find(p => p.docId === docId);
             if (!post) return;
@@ -1468,14 +1494,15 @@
                 badge: badge,
                 text: text,
                 time: Date.now(),
-                attachment: "",
-                attachmentType: "",
+                attachment: window.tempCommentAttachment.url || "",
+                attachmentType: window.tempCommentAttachment.type || "",
                 replies: []
             };
 
             if (!post.comments) post.comments = [];
             post.comments.push(newComment);
             
+            window.tempCommentAttachment = { url: "", type: "" };
             let total = post.comments.length;
             let newCountStr = total + " تعليقات";
 
