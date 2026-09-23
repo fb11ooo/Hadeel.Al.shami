@@ -416,7 +416,7 @@
                         window.bioText = data.bioText;
                         document.getElementById('bioTextContainer').innerHTML = window.bioText;
                     }
-                    if (data.accounts) {
+                    if (data.accounts && data.accounts.length > 0) {
                         window.accounts = data.accounts;
                         updateMainProfileVerificationDisplay();
                         updateMainProfileNameDisplay();
@@ -701,7 +701,7 @@
                         saveSettingsToCloud();
                         renderFeed();
                         if (currentPostIdForComment) openComments(currentPostIdForComment);
-                        alert("تم تحديث الاسم بنجاح.");
+                        alert("تم تحديث الاسم بنجاح وحفظه سحابياً.");
                     }
                 } else if (choice === "3" && commentIndex !== null && docId !== null) {
                     let post = window.posts.find(p => p.docId === docId);
@@ -1024,7 +1024,7 @@
                     let verifiedConfirm = confirm("هل تريد توثيق هذا الحساب بعلامة التوثيق الزرقاء؟");
                     window.accounts.push({ id: newId, name: name.trim(), avatar: "", isMain: false, isVerified: verifiedConfirm });
                     saveSettingsToCloud();
-                    alert("تم إضافة الحساب بنجاح.");
+                    alert("تم إضافة الحساب وحفظه في السحابة بنجاح.");
                 }
             } else if (choice === "2") {
                 let accNum = prompt(`اختر رقم الحساب لتعديل اسمه:\n` + window.accounts.map((acc, i) => `${i + 1}: ${acc.name}`).join('\n'));
@@ -1036,7 +1036,7 @@
                         if (window.accounts[idx].isMain) updateMainProfileNameDisplay();
                         saveSettingsToCloud();
                         renderFeed();
-                        alert("تم تغيير اسم الحساب بنجاح!");
+                        alert("تم تغيير اسم الحساب وحفظه سحابياً بنجاح!");
                     }
                 }
             } else if (choice === "3") {
@@ -1054,7 +1054,7 @@
                     updateMainProfileVerificationDisplay();
                     saveSettingsToCloud();
                     renderFeed();
-                    alert("تم تغيير حالة التوثيق بنجاح.");
+                    alert("تم تغيير حالة التوثيق وحفظها سحابياً.");
                 }
             } else if (choice === "5") {
                 let accNum = prompt(`اختر رقم الحساب الوهمي الذي تريد حذفه:\n` + window.accounts.map((acc, i) => `${i + 1}: ${acc.name} ${acc.isMain ? '(لا يمكن حذف الرئيسي)' : ''}`).join('\n'));
@@ -1064,11 +1064,11 @@
                         alert("عذراً، لا يمكنك حذف الحساب الرئيسي للموقع!");
                         return;
                     }
-                    if (confirm(`هل أنت متأكد من مسح الحساب "${window.accounts[idx].name}" نهائياً؟`)) {
+                    if (confirm(`هل أنت متأكد من مسح الحساب "${window.accounts.name}" نهائياً؟`)) {
                         window.accounts.splice(idx, 1);
                         saveSettingsToCloud();
                         renderFeed();
-                        alert("تم مسح الحساب الوهمي بنجاح.");
+                        alert("تم مسح الحساب وحفظ التحديثات في السحابة.");
                     }
                 }
             }
