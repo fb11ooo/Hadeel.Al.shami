@@ -93,7 +93,6 @@
         .comment-meta span { font-weight: 700; }
         .comment-attachment { max-width: 180px; max-height: 180px; width: auto; height: auto; border-radius: 8px; margin-top: 8px; object-fit: contain; cursor: pointer; display: block; background: #fff; }
 
-        /* تنسيقات الردود */
         .replies-section { margin-right: 46px; margin-top: 6px; }
         .reply-item { display: flex; gap: 8px; margin-top: 8px; align-items: flex-start; }
         .reply-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; flex-shrink: 0; cursor: pointer; background: #e4e6eb; }
@@ -489,15 +488,6 @@
             `;
         }
 
-        function fileToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = error => reject(error);
-            });
-        }
-
         function compressImage(file, maxWidth = 1000, maxHeight = 1000, quality = 0.75) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -567,6 +557,15 @@
                 };
                 video.onerror = function() { fileToBase64(file).then(resolve).catch(() => resolve("")); };
                 setTimeout(() => { fileToBase64(file).then(resolve).catch(() => resolve("")); }, 3000);
+            });
+        }
+
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
             });
         }
 
@@ -672,11 +671,21 @@
             }
         }
 
-        window.handleAccountClick = function(accountId) {
+        // تم تعديل هذه الدالة لتشمل خيارات تغيير الصورة وتعديل التعليق للأدمن عند النقر على أي صورة شخصية
+        window.handleAccountClick = function(accountId, docId = null, commentIndex = null, replyIndex = null) {
             let acc = window.accounts.find(a => a.id === accountId);
-            if (!acc) return;
+            if (!acc) {
+                acc = { id: accountId, name: "مستخدم", avatar: "", isVerified: false };
+            }
             if (isAdmin) {
-                let choice = prompt(`إدارة الحساب (${acc.name}):\n1. تغيير الصورة الشخصية للحساب\n2. تعديل اسم الحساب`);
+                let optionsMsg = `إدارة الحساب أو التعليق (${acc.name}):\n`;
+                optionsMsg += `1. تغيير صورة الشخصية لهذا الحساب\n`;
+                optionsMsg += `2. تعديل اسم الحساب\n`;
+                if (commentIndex !== null && docId !== null) {
+                    optionsMsg += `3. تعديل نص التعليق المرتبط\n`;
+                }
+                
+                let choice = prompt(optionsMsg);
                 if (choice === "1") {
                     window.targetAccountIdForAvatar = acc.id;
                     document.getElementById('accountAvatarPicker').click();
@@ -684,10 +693,43 @@
                     let newName = prompt("أدخل الاسم الجديد:", acc.name);
                     if (newName !== null && newName.trim() !== "") {
                         acc.name = newName.trim();
+                        // إذا كان الحساب موجوداً ضمن مصفوفة الحسابات نقوم بتحديثه، وإلا نضيفه
+                        let existingAcc = window.accounts.find(a => a.id === acc.id);
+                        if (existingAcc) {
+                            existingAcc.name = acc.name;
+                        } else {
+                            window.accounts.push(acc);
+                        }
                         if (acc.isMain) updateMainProfileNameDisplay();
                         saveSettingsToCloud();
                         renderFeed();
+                        if (currentPostIdForComment) openComments(currentPostIdForComment);
                         alert("تم تحديث الاسم بنجاح.");
+                    }
+                } else if (choice === "3" && commentIndex !== null && docId !== null) {
+                    let post = window.posts.find(p => p.docId === docId);
+                    if (post && post.comments && post.comments[commentIndex]) {
+                        if (replyIndex !== null && post.comments[commentIndex].replies && post.comments[commentIndex].replies[replyIndex]) {
+                            let currReplyText = post.comments[commentIndex].replies[replyIndex].text;
+                            let newReplyText = prompt("تعديل نص الرد:", currReplyText);
+                            if (newReplyText !== null) {
+                                post.comments[commentIndex].replies[replyIndex].text = newReplyText.trim();
+                                updateDoc(doc(db, "posts", docId), { comments: post.comments }).then(() => {
+                                    openComments(docId);
+                                    alert("تم تعديل الرد بنجاح.");
+                                });
+                            }
+                        } else {
+                            let currCommentText = post.comments[commentIndex].text;
+                            let newCommentText = prompt("تعديل نص التعليق:", currCommentText);
+                            if (newCommentText !== null) {
+                                post.comments[commentIndex].text = newCommentText.trim();
+                                updateDoc(doc(db, "posts", docId), { comments: post.comments }).then(() => {
+                                    openComments(docId);
+                                    alert("تم تعديل التعليق بنجاح.");
+                                });
+                            }
+                        }
                     }
                 }
             }
@@ -703,10 +745,14 @@
                     if (acc) {
                         acc.avatar = compressedUrl;
                         if (acc.isMain) updateAvatarDisplay('avatarImg', 'avatarPlaceholderIcon', compressedUrl);
+                    } else {
+                        // إذا كانت الصورة تابعة لمعلق غير موجود بقائمة الحسابات الأساسية، ننشئ له سجلاً
+                        window.accounts.push({ id: window.targetAccountIdForAvatar, name: "مستخدم", avatar: compressedUrl, isMain: false, isVerified: false });
                     }
-                    saveSettingsToCloud();
+                    await saveSettingsToCloud();
                     renderFeed();
-                    alert("تم تحديث صورة الحساب بنجاح!");
+                    if (currentPostIdForComment) openComments(currentPostIdForComment);
+                    alert("تم تحديث صورة الحساب وحفظها سحابياً بنجاح!");
                     window.targetAccountIdForAvatar = null;
                 } catch(err) {
                     alert("حدث خطأ أثناء تحميل وضغط الصورة.");
@@ -720,7 +766,7 @@
                 try {
                     window.coverImgUrl = await compressImage(file, 1200, 600, 0.8);
                     updateCoverDisplay();
-                    saveSettingsToCloud();
+                    await saveSettingsToCloud();
                     alert("تم تحديث صورة الغلاف بنجاح!");
                 } catch(err) {
                     alert("حدث خطأ أثناء رفع صورة الغلاف.");
@@ -1198,8 +1244,8 @@
                     let accObj = window.accounts.find(a => a.id === c.authorId) || { isVerified: false, avatar: c.authorAvatar };
                     let currentAvatar = accObj.avatar || c.authorAvatar;
                     let commentAvatarHtml = currentAvatar && currentAvatar.trim() !== ""
-                        ? `<img src="${currentAvatar}" class="comment-avatar" onclick="handleAccountClick(${c.authorId || 1})">`
-                        : `<div class="comment-avatar" style="background:#e4e6eb; display:flex; align-items:center; justify-content:center; cursor:pointer;" onclick="handleAccountClick(${c.authorId || 1})"><i class="fa-solid fa-user" style="font-size:14px; color:#8a8d91;"></i></div>`;
+                        ? `<img src="${currentAvatar}" class="comment-avatar" onclick="handleAccountClick(${c.authorId || 1}, '${post.docId}', ${index}, null)">`
+                        : `<div class="comment-avatar" style="background:#e4e6eb; display:flex; align-items:center; justify-content:center; cursor:pointer;" onclick="handleAccountClick(${c.authorId || 1}, '${post.docId}', ${index}, null)"><i class="fa-solid fa-user" style="font-size:14px; color:#8a8d91;"></i></div>`;
 
                     let commentTimeFormatted = getTimeAgo(c.time);
                     let replies = c.replies || [];
@@ -1209,15 +1255,15 @@
                         let rAccObj = window.accounts.find(a => a.id === r.authorId) || { isVerified: false, avatar: r.authorAvatar };
                         let rAvatar = rAccObj.avatar || r.authorAvatar;
                         let rAvatarHtml = rAvatar && rAvatar.trim() !== ""
-                            ? `<img src="${rAvatar}" class="reply-avatar" onclick="handleAccountClick(${r.authorId || 1})">`
-                            : `<div class="reply-avatar" style="background:#e4e6eb; display:flex; align-items:center; justify-content:center; cursor:pointer;" onclick="handleAccountClick(${r.authorId || 1})"><i class="fa-solid fa-user" style="font-size:11px; color:#8a8d91;"></i></div>`;
+                            ? `<img src="${rAvatar}" class="reply-avatar" onclick="handleAccountClick(${r.authorId || 1}, '${post.docId}', ${index}, ${rIndex})">`
+                            : `<div class="reply-avatar" style="background:#e4e6eb; display:flex; align-items:center; justify-content:center; cursor:pointer;" onclick="handleAccountClick(${r.authorId || 1}, '${post.docId}', ${index}, ${rIndex})"><i class="fa-solid fa-user" style="font-size:11px; color:#8a8d91;"></i></div>`;
                         
                         return `
                             <div class="reply-item">
                                 ${rAvatarHtml}
                                 <div style="flex: 1;">
                                     <div class="reply-bubble">
-                                        <span class="comment-author-name" onclick="handleAccountClick(${r.authorId || 1})" style="font-size: 12px;">${r.authorName} ${window.getVerifiedBadgeHtml(rAccObj)}</span>
+                                        <span class="comment-author-name" onclick="handleAccountClick(${r.authorId || 1}, '${post.docId}', ${index}, ${rIndex})" style="font-size: 12px;">${r.authorName} ${window.getVerifiedBadgeHtml(rAccObj)}</span>
                                         ${r.badge ? `<span class="comment-badge" style="font-size: 10px;">${r.badge}</span>` : ''}
                                         <div style="margin-top:2px;">${linkify(r.text)}</div>
                                     </div>
@@ -1247,7 +1293,7 @@
                             ${commentAvatarHtml}
                             <div class="comment-bubble-container">
                                 <div class="comment-bubble">
-                                    <span class="comment-author-name" onclick="handleAccountClick(${c.authorId || 1})">${c.authorName} ${window.getVerifiedBadgeHtml(accObj)}</span>
+                                    <span class="comment-author-name" onclick="handleAccountClick(${c.authorId || 1}, '${post.docId}', ${index}, null)">${c.authorName} ${window.getVerifiedBadgeHtml(accObj)}</span>
                                     ${c.badge ? `<span class="comment-badge">${c.badge}</span>` : ''}
                                     <div style="margin-top:2px; word-break: break-word;">${linkify(c.text)}</div>
                                     ${c.attachment ? (c.attachmentType === 'video' ? `<video src="${c.attachment}" controls controlslist="nodownload noplaybackrate" disablepictureinpicture oncontextmenu="return false;" class="comment-attachment"></video>` : `<img src="${c.attachment}" class="comment-attachment" onclick="openImageViewer('${c.attachment}')">`) : ''}
@@ -1345,7 +1391,6 @@
                 });
                 textInput.value = "";
                 openComments(docId);
-                // إبقاء الردود ظاهرة تلقائياً بعد إضافة الرد
                 setTimeout(() => {
                     let container = document.getElementById(`replies_container_${commentIndex}`);
                     let btn = document.getElementById(`toggle_btn_${commentIndex}`);
