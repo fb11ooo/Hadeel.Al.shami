@@ -356,19 +356,21 @@
     <!-- كود جافاسكريبت و Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
         import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, onSnapshot, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
-          apiKey: "AIzaSyAp3jL2QZ6iWqOVQ5aTbuKY9OmxmtYCfvM",
-          authDomain: "jjjj-9fbeb.firebaseapp.com",
-          projectId: "jjjj-9fbeb",
-          storageBucket: "jjjj-9fbeb.firebasestorage.app",
-          messagingSenderId: "906849394101",
-          appId: "1:906849394101:web:6561c16c36e524f9560dfc",
-          measurementId: "G-1W3V48SYWE"
+          apiKey: "AIzaSyDLRz86h_Y8ke4ouhdpJueX30yfP86oHzY",
+          authDomain: "hadeel-2ef63.firebaseapp.com",
+          projectId: "hadeel-2ef63",
+          storageBucket: "hadeel-2ef63.firebasestorage.app",
+          messagingSenderId: "57788797283",
+          appId: "1:57788797283:web:c11b5667915b580789c356",
+          measurementId: "G-M4Q6W2S4MX"
         };
 
         const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
         const db = getFirestore(app);
 
         window.history.pushState({ page: "main" }, "", window.location.href);
@@ -497,7 +499,7 @@
             `;
         }
 
-        function compressImage(file, maxWidth = 250, maxHeight = 250, quality = 0.5) {
+        function compressImage(file, maxWidth = 300, maxHeight = 300, quality = 0.45) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
@@ -542,7 +544,7 @@
                     window.URL.revokeObjectURL(video.src);
                     let width = video.videoWidth;
                     let height = video.videoHeight;
-                    const maxDim = 360;
+                    const maxDim = 320;
                     if (width > height) {
                         if (width > maxDim) {
                             height = Math.round((height * maxDim) / width);
@@ -565,7 +567,7 @@
                     reader.readAsDataURL(file);
                 };
                 video.onerror = function() { fileToBase64(file).then(resolve).catch(() => resolve("")); };
-                setTimeout(() => { fileToBase64(file).then(resolve).catch(() => resolve("")); }, 3000);
+                setTimeout(() => { fileToBase64(file).then(resolve).catch(() => resolve("")); }, 2500);
             });
         }
 
@@ -1100,7 +1102,6 @@
             }
         }
 
-        // ميزة تغيير مكان المنشور فوق أو تحت
         window.movePostOrder = async function(docId, direction) {
             let index = window.posts.findIndex(p => p.docId === docId || String(p.id) === String(docId));
             if (index === -1) return;
@@ -1185,7 +1186,6 @@
             }
         }
 
-        // زر إزالة الصور من المنشور مع إبقاء النص
         window.clearPostImages = function() {
             window.tempFiles = [];
             document.getElementById('filePreview').innerText = "تمت إزالة جميع الصور/الفيديوهات (سيتم نشر النص فقط).";
@@ -1217,7 +1217,7 @@
                 for (let i = 0; i < files.length; i++) {
                     let file = files[i];
                     try {
-                        let base64Url = file.type.startsWith('video') ? await compressVideo(file) : await compressImage(file, 600, 600, 0.5);
+                        let base64Url = file.type.startsWith('video') ? await compressVideo(file) : await compressImage(file, 500, 500, 0.45);
                         window.tempFiles.push({ url: base64Url, type: file.type.startsWith('video') ? 'video' : 'image' });
                     } catch(err) { console.error(err); }
                 }
@@ -1230,7 +1230,7 @@
             const file = e.target.files[0];
             if (file) {
                 try {
-                    let base64Url = file.type.startsWith('video') ? await compressVideo(file) : await compressImage(file, 400, 400, 0.5);
+                    let base64Url = file.type.startsWith('video') ? await compressVideo(file) : await compressImage(file, 400, 400, 0.45);
                     window.tempCommentAttachment = {
                         url: base64Url,
                         type: file.type.startsWith('video') ? 'video' : 'image'
@@ -1252,7 +1252,7 @@
             let isLocked = document.getElementById('postLockedCheckbox').checked;
             let authorId = parseInt(document.getElementById('postAuthorSelect').value);
             
-            if(!text.trim() && window.tempFiles.length === 0 && currentEditingPostId === null) {
+            if(!text.trim() && window.tempFiles.length === 0) {
                 alert("اكتب شيئاً أو أرفق صور أو فيديوهات للنشر.");
                 return;
             }
@@ -1274,7 +1274,7 @@
                             isLocked: isLocked,
                             authorId: authorId,
                             mediaFiles: [...window.tempFiles],
-                            mediaUrl: "", // لتنظيف الحقول القديمة إن وجدت
+                            mediaUrl: "",
                             mediaType: ""
                         });
                     }
@@ -1302,7 +1302,7 @@
                 closePostModal();
             } catch (err) {
                 console.error(err);
-                alert("حدث خطأ أثناء الاتصال بسحابة Firebase.");
+                alert("حدث خطأ أثناء الاتصال بسحابة Firebase. يجدر محاولة تصغير حجم الصورة أو رفع صورة واحدة.");
             } finally {
                 submitBtn.innerText = currentEditingPostId !== null ? "حفظ التعديلات" : "نشر";
                 submitBtn.disabled = false;
