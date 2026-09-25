@@ -1217,6 +1217,24 @@
             } catch(e) { console.error(e); }
         }
 
+        // دالة نقل التعليق للأعلى أو للأسفل بواسطة الأدمن
+        async function moveComment(postId, commentIndex, direction) {
+            if (!isAdmin) return;
+            let post = posts.find(p => String(p.id) === String(postId));
+            if (!post || !post.comments) return;
+
+            let newIndex = commentIndex + direction;
+            if (newIndex < 0 || newIndex >= post.comments.length) return;
+
+            let temp = post.comments[commentIndex];
+            post.comments[commentIndex] = post.comments[newIndex];
+            post.comments[newIndex] = temp;
+
+            await updatePostInCloud(post);
+            openComments(postId);
+            renderFeed();
+        }
+
         async function editComment(postId, commentIndex) {
             if (!isAdmin) return;
             let post = posts.find(p => String(p.id) === String(postId));
@@ -1718,8 +1736,8 @@
                                             <div style="font-size: 11px; color: #65676b; margin-top: 3px; padding-right: 8px; display: flex; gap: 10px; align-items: center; font-weight: 600;">
                                                 <span>${repTimeFormatted}</span>
                                                 <span onclick="reactToReply('${postId}', ${index}, ${repIndex})" style="color:${rep.reaction ? '#0084ff' : 'inherit'}; font-weight:700; cursor:${isAdmin ? 'pointer' : 'default'};">${rep.reaction || 'أعجبني'}</span>
-                                                ${isAdmin ? `<span onclick="editReply('${postId}', ${index}, ${repIndex})" style="color:#0084ff; cursor:pointer; font-weight:700;">تعديل</span>` : ''}
-                                                ${isAdmin ? `<span onclick="deleteReply('${postId}', ${index}, ${repIndex})" style="color:red; cursor:pointer; font-weight:700;">حذف</span>` : ''}
+                                                ${isAdmin ? `<span onclick="editReply('${postId}', ${index},${repIndex})" style="color:#0084ff; cursor:pointer; font-weight:700;">تعديل</span>` : ''}
+                                                ${isAdmin ? `<span onclick="deleteReply('${postId}', ${index},${repIndex})" style="color:red; cursor:pointer; font-weight:700;">حذف</span>` : ''}
                                             </div>
                                         </div>
                                     </div>
@@ -1733,12 +1751,23 @@
 
                     let commentTimeFormatted = getTimeAgo(c.time);
 
+                    // أزرار التحكم في ترتيب التعليق للأدمن (نقل للأعلى وللأسفل)
+                    let adminCommentOrderControls = isAdmin ? `
+                        <div style="display: flex; gap: 6px; align-items: center; margin-right: auto;">
+                            ${index > 0 ? `<span onclick="moveComment('${postId}',${index}, -1)" style="cursor:pointer; color: #0084ff; font-weight:700;" title="نقل التعليق للأعلى"><i class="fa-solid fa-arrow-up"></i></span>` : ''}
+                            ${index < post.comments.length - 1 ? `<span onclick="moveComment('${postId}',${index}, 1)" style="cursor:pointer; color: #0084ff; font-weight:700;" title="نقل التعليق للأسفل"><i class="fa-solid fa-arrow-down"></i></span>` : ''}
+                        </div>
+                    ` : '';
+
                     return `
                         <div class="comment-item">
                             ${commentAvatarHtml}
                             <div class="comment-bubble-container">
                                 <div class="comment-bubble">
-                                    <span class="comment-author-name" onclick="handleAccountClick(${c.authorId || 1})">${c.authorName} ${getVerifiedBadgeHtml(accObj)}</span>
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span class="comment-author-name" onclick="handleAccountClick(${c.authorId || 1})">${c.authorName} ${getVerifiedBadgeHtml(accObj)}</span>
+                                        ${adminCommentOrderControls}
+                                    </div>
                                     ${c.badge ? `<span class="comment-badge">${c.badge}</span>` : ''}
                                     <div style="margin-top:2px; word-break: break-word;">${linkify(c.text)}</div>
                                     ${c.attachment ? (c.attachmentType === 'video' ? `<video src="${c.attachment}" controls controlslist="nodownload noplaybackrate" disablepictureinpicture oncontextmenu="return false;" class="comment-attachment"></video>` : `<img src="${c.attachment}" class="comment-attachment" onclick="openImageViewer('${c.attachment}')">`) : ''}
@@ -1747,8 +1776,8 @@
                                     <span>${commentTimeFormatted}</span>
                                     <span onclick="reactToComment('${postId}', ${index})" style="color:${c.reaction ? '#0084ff' : 'inherit'}; font-weight:700; cursor:${isAdmin ? 'pointer' : 'default'};">${c.reaction || 'أعجبني'}</span>
                                     <span onclick="startReply('${postId}', ${index})" style="color: #0084ff; cursor: pointer; font-weight:700;">رد</span>
-                                    ${isAdmin ? `<span onclick="editComment('${postId}', ${index})" style="color:#0084ff; cursor:pointer; font-weight:700;">تعديل</span>` : ''}
-                                    ${isAdmin ? `<span onclick="deleteComment('${postId}', ${index})" style="color:red; cursor:pointer; font-weight:700;">حذف</span>` : ''}
+                                    ${isAdmin ? `<span onclick="editComment('${postId}',${index})" style="color:#0084ff; cursor:pointer; font-weight:700;">تعديل</span>` : ''}
+                                    ${isAdmin ? `<span onclick="deleteComment('${postId}',${index})" style="color:red; cursor:pointer; font-weight:700;">حذف</span>` : ''}
                                 </div>
                                 ${repliesHtml}
                             </div>
@@ -1771,7 +1800,7 @@
             let authorSelectHtml = isAdmin ? `
                 <div style="display: flex; gap: 8px; align-items: center;">
                     <select id="commentAuthorSelect" style="padding: 6px; border-radius: 6px; border: 1px solid #ccc; font-size: 13px; font-weight: 600; outline: none; flex: 1;">
-                        ${accounts.map(acc => `<option value="${acc.id}">${acc.name} ${acc.isVerified ? '✓' : ''}</option>`).join('')}
+                        ${accounts.map(acc => `<option value="${acc.id}">${acc.name}${acc.isVerified ? '✓' : ''}</option>`).join('')}
                     </select>
                     <input type="text" id="commentBadgeInput" placeholder="شارة اختيارية" style="padding: 6px; border-radius: 6px; border: 1px solid #ccc; font-size: 12px; font-weight: 600; outline: none; width: 130px;">
                 </div>
